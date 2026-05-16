@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>我们的温馨小家 - 最终版(新留言区表情已修复)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fef9e8; min-height: 100vh; display: flex; flex-direction: column; }
+        .container { max-width: 1400px; width: 90%; margin: 0 auto; padding: 20px; flex: 1; }
+        header { background: #ffb74d; color: white; width: 100%; padding: 0.8rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .weather-date { font-size: 0.9rem; background: rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 40px; backdrop-filter: blur(2px); white-space: nowrap; }
+        .weather-date div { line-height: 1.4; }
+        .weather-date .date { font-weight: bold; }
+        .weather-date .lunar { font-size: 0.8rem; opacity: 0.9; }
+        .weather-date .calendar { font-size: 0.75rem; opacity: 0.85; margin-top: 2px; }
+        .title-area { text-align: center; flex: 1; }
+        .title-area h1 { font-size: 1.8rem; letter-spacing: 2px; margin: 0; }
+        .title-area .subtitle { font-size: 0.85rem; margin-top: 5px; color: rgba(255,250,240,0.9); letter-spacing: 1px; }
+        @media (max-width:700px){ header{ flex-direction:column; text-align:center; gap:10px; } .weather-date{ align-self:flex-start; } .title-area h1{ font-size:1.4rem; } }
+        nav { background: #ffe0b2; padding: 1rem; text-align: center; width: 100%; margin-bottom: 20px; }
+        nav a { color: #e65100; text-decoration: none; margin: 0 15px; font-weight: bold; padding: 8px 12px; border-radius: 30px; transition: all 0.3s ease; }
+        nav a:hover { background-color: #ffb74d; color: white; }
+        .card { background: white; border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: transform 0.2s ease; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .two-columns .card { margin-bottom: 0; }
+        h2 { color: #e65100; border-left: 5px solid #ffb74d; padding-left: 15px; margin-bottom: 20px; }
+        .photo-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 15px; }
+        .photo-item { background: #f5f5f5; border-radius: 12px; overflow: hidden; text-align: center; padding: 10px; transition: all 0.2s; }
+        .photo-item.allow-overflow { overflow: visible; }
+        .photo-item img, .photo-item video { display: block; width: 100%; height: 150px; border-radius: 8px; background: #000; transition: transform 0.3s cubic-bezier(0.2,0.9,0.4,1.1), box-shadow 0.2s; }
+        .photo-item img { object-fit: cover; }
+        .photo-item video { object-fit: contain; }
+        .photo-item img.hover-glow, .photo-item video.hover-glow { transform: scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,0.2); position: relative; z-index: 1; }
+        .photo-item img.zoomed, .photo-item video.zoomed { transform: scale(4); position: relative; z-index: 1000; transition: transform 0.3s ease; }
+        .pet-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+        .pet-item { background: #f5f5f5; border-radius: 12px; overflow: hidden; text-align: center; padding: 10px; }
+        .pet-item.allow-overflow { overflow: visible; }
+        .pet-item img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; transition: transform 0.3s cubic-bezier(0.2,0.9,0.4,1.1), box-shadow 0.2s; }
+        .pet-item img.hover-glow { transform: scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,0.2); position: relative; z-index: 1; }
+        .pet-item img.zoomed { transform: scale(4); position: relative; z-index: 1000; transition: transform 0.3s ease; }
+        button { background-color: #ffb74d; border: none; padding: 6px 14px; border-radius: 30px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        button:hover { background-color: #ffa726; }
+        .message-board { background-color: #fff3e0; border-radius: 15px; padding: 20px; }
+        .message-item { border-bottom: 1px solid #ffe0b2; padding: 15px 0; margin-bottom: 10px; position: relative; }
+        .message-author { font-weight: bold; color: #e65100; }
+        .message-time { font-size: 0.75rem; color: #999; margin-left: 10px; }
+        .delete-btn { float: right; background: #ff8a5c; color: white; border: none; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; cursor: pointer; }
+        .delete-btn:hover { background: #e65100; }
+        .reply-section { margin-left: 30px; margin-top: 12px; padding-left: 15px; border-left: 2px solid #ffb74d; }
+        .reply-item { background: #fff8f0; border-radius: 12px; padding: 8px 12px; margin-bottom: 8px; position: relative; }
+        .reply-form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+        .emoji-bar { display: inline-flex; gap: 6px; background: #fff0dc; padding: 4px 10px; border-radius: 40px; margin-left: 5px; }
+        .emoji-btn, .local-emoji-btn { background: none; font-size: 1.2rem; padding: 0 3px; cursor: pointer; }
+        .emoji-btn:hover, .local-emoji-btn:hover { transform: scale(1.2); }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); overflow: auto; }
+        .modal-content { background-color: #fef9e8; margin: 5% auto; padding: 20px; border-radius: 30px; width: 80%; max-width: 800px; max-height: 80%; overflow-y: auto; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        .modal-content h3 { margin-bottom: 15px; color: #e65100; }
+        .emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px,70px)); gap: 10px; justify-content: center; }
+        .emoji-grid img { width: 50px; height: 50px; object-fit: contain; cursor: pointer; border-radius: 12px; transition: transform 0.1s; background: white; padding: 5px; }
+        .emoji-grid img:hover { transform: scale(1.1); background: #ffb74d; }
+        .close-modal { float: right; font-size: 28px; font-weight: bold; cursor: pointer; color: #e65100; }
+        footer { text-align: center; padding: 20px; color: #999; font-size: 0.8rem; background-color: #fff3e0; width: 100%; margin-top: auto; }
+        .login-panel { background: #fff0dc; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 20px; }
+        .password-wrapper { display: inline-flex; align-items: center; background: white; border-radius: 40px; padding: 5px 15px; border: 1px solid #ffb74d; }
+        .password-wrapper input { border: none; padding: 8px; font-size: 1rem; outline: none; width: 200px; }
+        .toggle-eye { cursor: pointer; font-size: 1.2rem; background: none; border: none; padding: 0 5px; }
+        select, input[type="text"] { padding: 8px; border-radius: 20px; border: 1px solid #ddd; }
+        .inline-emoji { width: 24px; height: 24px; vertical-align: middle; margin: 0 2px; }
+        @media (max-width:700px){ .photo-grid{ grid-template-columns:repeat(2,1fr); } .two-columns{ grid-template-columns:1fr; gap:20px; } .reply-form{ flex-direction:column; align-items:stretch; } .emoji-bar{ justify-content:center; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="weather-date" id="datePanel">
+            <div class="date">加载中...</div>
+            <div class="lunar">农历加载中...</div>
+            <div class="calendar">黄历加载中...</div>
+        </div>
+        <div class="title-area">
+            <h1>🏠 我们的温馨小家</h1>
+            <div class="subtitle">记录爱与成长的每一刻</div>
+        </div>
+        <div style="width: 80px;"></div>
+    </header>
+
+    <nav>
+        <a href="#">首页</a>
+        <a href="#">影音时光</a>
+        <a href="#">趣事簿</a>
+        <a href="#">宠物乐园</a>
+        <a href="#">梦想·格言</a>
+        <a href="#">家人介绍</a>
+        <a href="#">留言板</a>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h2>📸 影音时光</h2>
+            <div class="photo-grid">
+                <div class="photo-item"><img src="images/IMG_20140819_100004.jpg" alt="照片1"></div>
+                <div class="photo-item"><img src="images/FJ1A9430.jpg" alt="照片2"></div>
+                <div class="photo-item"><img src="images/FJ1A9514.jpg" alt="照片3"></div>
+                <div class="photo-item"><video controls><source src="videos/美女.mp4" type="video/mp4"></video></div>
+                <div class="photo-item"><img src="images/FJ1A9443.jpg" alt="照片4"></div>
+                <div class="photo-item"><img src="images/FJ1A9491.jpg" alt="照片5"></div>
+                <div class="photo-item"><img src="images/FJ1A9542.jpg" alt="照片6"></div>
+            </div>
+        </div>
+
+        <div class="two-columns">
+            <div class="card">
+                <h2>✨ 家庭趣事簿</h2>
+                <div><h3>📖 2个美丽的天使诞生</h3><p>2008年2月16日，我们家两个小宝宝出生了，刚出来的样子真是可爱极了！</p></div>
+                <div style="margin-top:15px"><h3>🎨 第一次自己会走路</h3><p>王宝雯：2009-02-08 13:24:21 我终于迈出了人生中的第一步！全家人都为我感到骄傲！</p></div>
+                <div style="margin-top:25px; padding-top:15px; border-top:1px dashed #ffb74d; text-align:center;">
+                    <div style="display:flex; justify-content:space-around; flex-wrap:wrap; gap:15px; color:#e65100;">
+                        <div><span style="font-size:1.8rem;">🎈</span><br><span style="font-size:0.7rem;">开心时刻</span></div>
+                        <div><span style="font-size:1.8rem;">📸</span><br><span style="font-size:0.7rem;">记录瞬间</span></div>
+                        <div><span style="font-size:1.8rem;">🍰</span><br><span style="font-size:0.7rem;">甜蜜回忆</span></div>
+                        <div><span style="font-size:1.8rem;">🐣</span><br><span style="font-size:0.7rem;">成长足迹</span></div>
+                        <div><span style="font-size:1.8rem;">🌟</span><br><span style="font-size:0.7rem;">梦想起航</span></div>
+                    </div>
+                    <p style="margin-top:15px; font-size:0.8rem; color:#b85c00;">✨ 更多趣事待续，每一天都是故事 ✨</p>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🐾 宠物乐园</h2>
+                <div class="pet-grid">
+                    <div class="pet-item"><img src="images/IMG_20240610_112409.jpg" alt="旺财" onerror="this.src='https://via.placeholder.com/150?text=旺财'"><p>旺财 你在那边快乐吗？</p></div>
+                    <div class="pet-item"><img src="images/DSC_0858.JPG" alt="咪咪" onerror="this.src='https://via.placeholder.com/150?text=咪咪'"><p>咪咪</p></div>
+                    <div class="pet-item"><img src="images/DSC_0718.JPG" alt="豆豆" onerror="this.src='https://via.placeholder.com/150?text=豆豆'"><p>豆豆</p></div>
+                </div>
+                <p style="margin-top:15px; color:#666; text-align:center;">可爱的家庭成员，给我们带来无限欢乐～</p>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
+            <div class="card"><h2>🌟 孩子的梦想</h2><ul><li><strong>王宝雯（19岁）：</strong>“我想成为一名上班可以摸鱼，老板年年给我涨工资的梦想青年！”</li><li><strong>王宝辉（19岁）：</strong>“我曾梦想仗剑天涯、怎奈手中无剑，所以我得先挣钱买把宝剑！”</li></ul></div>
+            <div class="card"><h2>💡 励志名言</h2><ul><li>“梦想还是要有的，万一实现了呢？”</li><li>“世上无难事，只怕有心人。” — 毛泽东</li><li>“只要持续地努力，不懈地奋斗，就没有征服不了的东西。” — 塞内加</li></ul></div>
+        </div>
+
+        <div class="card"><h2>👨‍👩‍👧‍👦 我们的家庭</h2><div style="text-align:center"><div style="display:inline-block; margin:0 20px"><div>👨 <strong>爸爸：王开锋</strong></div><div>爱好：唱歌、玩电脑，梦想：减肥，只是梦想而已！</div></div><div style="display:inline-block; margin:0 20px"><div>👩 <strong>妈妈：杜凤</strong></div><div>爱好：做美食、养流浪猫、看圣经</div></div><div style="display:inline-block; margin:0 20px"><div>👧 <strong>大宝：王宝雯</strong></div><div>19岁，高三年级：希望高考考出好成绩，顺利进入自己喜欢的大学专业</div></div><div style="display:inline-block; margin:0 20px"><div>👶 <strong>小宝：王宝辉</strong></div><div>19岁，高三年级，在接下来的学校做有理想有追求，踏实学习的有志青年！</div></div></div></div>
+
+        <!-- 留言板区域 -->
+        <div id="guestbookWrapper">
+            <div id="loginPanel" class="login-panel">
+                <p style="margin-bottom:12px">🔒 留言板需要密码才能查看和互动</p>
+                <div class="password-wrapper">
+                    <input type="password" id="passwordInput" placeholder="输入家庭密码">
+                    <button class="toggle-eye" id="toggleEye">👁️</button>
+                </div>
+                <button id="unlockBtn" style="margin-left:10px">解锁留言板</button>
+            </div>
+            <div id="guestbookSection" class="card" style="display:none">
+                <h2>💬 家人留言板 <span style="font-size:0.8rem">(可删除 & 本地表情)</span></h2>
+                <div class="message-board" id="messageList"></div>
+                <!-- 发表新留言区域 - 包含表情栏 -->
+                <div style="margin-top:20px; background:#fff3e0; padding:15px; border-radius:20px">
+                    <h3>📝 发表新留言</h3>
+                    <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:10px">
+                        <select id="newMsgAuthor" style="flex:1">
+                            <option value="爸爸">爸爸</option><option value="妈妈">妈妈</option><option value="王宝雯">王宝雯</option><option value="王宝辉">王宝辉</option>
+                        </select>
+                        <input type="text" id="newMsgContent" placeholder="写下你想说的话..." style="flex:3">
+                        <!-- 表情栏（8个快速表情 + 本地表情选择器） -->
+                        <div class="emoji-bar" style="margin-left:0;">
+                            <button type="button" class="emoji-btn" data-emoji="👍">👍</button>
+                            <button type="button" class="emoji-btn" data-emoji="❤️">❤️</button>
+                            <button type="button" class="emoji-btn" data-emoji="🌹">🌹</button>
+                            <button type="button" class="emoji-btn" data-emoji="🙏">🙏</button>
+                            <button type="button" class="emoji-btn" data-emoji="😂">😂</button>
+                            <button type="button" class="emoji-btn" data-emoji="🎉">🎉</button>
+                            <button type="button" class="emoji-btn" data-emoji="💪">💪</button>
+                            <button type="button" class="emoji-btn" data-emoji="🤝">🤝</button>
+                            <button type="button" class="local-emoji-btn" id="newMsgLocalEmojiBtn">📁</button>
+                        </div>
+                        <button id="publishNewMsgBtn">📢 发布留言</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer><p>© 2026 我们的温馨小家 | 仅限家庭成员访问 | 记录爱与温暖</p></footer>
+
+    <div id="emojiModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>😊 选择本地表情（共263个）</h3>
+            <div id="emojiGrid" class="emoji-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // ======================= 纯本地农历+黄历 =======================
+        const lunarInfo = [
+            0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
+            0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
+            0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
+            0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
+            0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
+            0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,
+            0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
+            0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,
+            0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,
+            0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x055c0,0x0ab60,0x096d5,0x092e0,
+            0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,
+            0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
+            0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
+            0x05aa0,0x076a3,0x096d0,0x04bd7,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
+            0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0
+        ];
+        const lunarMonthNames = ["正","二","三","四","五","六","七","八","九","十","冬","腊"];
+        const lunarDayNames = ["初一","初二","初三","初四","初五","初六","初七","初八","初九","初十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十","廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十"];
+
+        function getLeapMonth(year) { return lunarInfo[year-1900] & 0xf; }
+        function getLunarMonthDays(year, month) {
+            let leap = getLeapMonth(year);
+            if (month > 12) return 0;
+            let bit = 0x10000 >> month;
+            if (leap > 0 && month === leap) return (lunarInfo[year-1900] & 0x10000) ? 30 : 29;
+            if (leap > 0 && month > leap) month--;
+            return (lunarInfo[year-1900] & bit) ? 30 : 29;
+        }
+        function getLunarYearDays(year) {
+            let sum = 0;
+            for (let i=1; i<=12; i++) sum += getLunarMonthDays(year,i);
+            let leap = getLeapMonth(year);
+            if (leap > 0) sum += getLunarMonthDays(year,leap);
+            return sum;
+        }
+        function solarToLunar(y,m,d) {
+            let base = new Date(1900,0,31);
+            let target = new Date(y,m-1,d);
+            let offset = Math.floor((target - base) / 86400000);
+            let year = 1900;
+            let daysYear = getLunarYearDays(year);
+            while (offset >= daysYear) {
+                offset -= daysYear;
+                year++;
+                daysYear = getLunarYearDays(year);
+            }
+            let month = 1;
+            let leap = getLeapMonth(year);
+            let isLeap = false;
+            while (true) {
+                let monthDays = getLunarMonthDays(year, month);
+                if (offset < monthDays) break;
+                offset -= monthDays;
+                if (leap === month && !isLeap) {
+                    isLeap = true;
+                    monthDays = getLunarMonthDays(year, month);
+                    if (offset < monthDays) break;
+                    offset -= monthDays;
+                }
+                month++;
+                if (month > 12) break;
+            }
+            return { year, month, day: offset+1, isLeap };
+        }
+        function getLunarString(y,m,d) {
+            const l = solarToLunar(y,m,d);
+            const monthName = l.isLeap ? "闰"+lunarMonthNames[l.month-1] : lunarMonthNames[l.month-1];
+            const dayName = lunarDayNames[l.day-1];
+            return `${monthName}月${dayName}`;
+        }
+        function getCalendarYiJi(y,m,d) {
+            const seed = y*366 + m*31 + d;
+            const yiList = ["结婚","出行","开业","搬家","入宅","安床","祭祀","祈福","纳财","交易","签约","相亲","旅游","理发"];
+            const jiList = ["动土","安葬","破土","开光","嫁娶","上梁","伐木","作灶","行丧","入殓","诉讼","纳畜"];
+            const yi = yiList[seed % yiList.length];
+            const ji = jiList[(seed+7) % jiList.length];
+            return { yi, ji };
+        }
+        function updateDateAndCalendar() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = now.getMonth()+1;
+            const d = now.getDate();
+            const weekdays = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+            const dateStr = `${y}年${m}月${d}日 ${weekdays[now.getDay()]}`;
+            let lunarStr = "计算中", calendarStr = "计算中";
+            try {
+                lunarStr = getLunarString(y,m,d);
+                const {yi,ji} = getCalendarYiJi(y,m,d);
+                calendarStr = `宜：${yi}　忌：${ji}`;
+            } catch(e) { lunarStr = "获取失败"; calendarStr = "获取失败"; }
+            const panel = document.getElementById('datePanel');
+            if(panel) panel.innerHTML = `<div class="date">📅 ${dateStr}</div><div class="lunar">🌙 ${lunarStr}</div><div class="calendar">📖 ${calendarStr}</div>`;
+        }
+
+        // ======================= 悬停效果（照片/视频 3秒放大4倍，视频自动播放） =======================
+        function applyHoverEffect(el, parentClass) {
+            if (el.hasAttribute('data-hover')) return;
+            el.setAttribute('data-hover', '1');
+            let timer = null;
+            let zoomed = false;
+            const enter = () => {
+                if (timer) clearTimeout(timer);
+                el.classList.add('hover-glow');
+                timer = setTimeout(() => {
+                    const parent = el.closest(parentClass);
+                    if (parent) parent.classList.add('allow-overflow');
+                    el.classList.add('zoomed');
+                    zoomed = true;
+                    if (el.tagName === 'VIDEO') {
+                        el.play().catch(e => { el.muted = true; el.play(); });
+                    }
+                }, 3000);
+            };
+            const leave = () => {
+                if (timer) clearTimeout(timer);
+                el.classList.remove('hover-glow');
+                if (zoomed) {
+                    el.classList.remove('zoomed');
+                    const parent = el.closest(parentClass);
+                    if (parent) parent.classList.remove('allow-overflow');
+                    zoomed = false;
+                    if (el.tagName === 'VIDEO') el.pause();
+                }
+            };
+            el.addEventListener('mouseenter', enter);
+            el.addEventListener('mouseleave', leave);
+        }
+        function initHover() {
+            document.querySelectorAll('.photo-grid .photo-item img, .photo-grid .photo-item video').forEach(media => applyHoverEffect(media, '.photo-item'));
+            document.querySelectorAll('.pet-grid .pet-item img').forEach(img => applyHoverEffect(img, '.pet-item'));
+        }
+
+        // ======================= 留言板功能（完整，新留言区表情已修复） =======================
+        const CORRECT_PASSWORD = "wkfdf001102";
+        const STORAGE_KEY = "familyMessagesV4";
+        const MEMBERS = ["爸爸","妈妈","王宝雯","王宝辉"];
+        const LOCAL_EMOJIS = []; for(let i=1;i<=263;i++) LOCAL_EMOJIS.push(i+".png");
+        let activeReplyInput = null;
+        let activeNewMsgInput = null;
+        let messages = [];
+
+        function getCurrentTime(){
+            let now=new Date();
+            return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+        }
+        function escapeHtml(str){ if(!str) return ''; return str.replace(/[&<>]/g,function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+        function parseEmojiText(text){ if(!text) return ''; return text.replace(/\[emoji:(.*?)\]/g, (m,f)=>`<img src="emojis/${encodeURI(f)}" class="inline-emoji" onerror="this.style.display='none'">`); }
+        function formatMessageContent(c){ return parseEmojiText(escapeHtml(c)); }
+        function saveData(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(messages)); }
+        function loadData(){
+            let stored=localStorage.getItem(STORAGE_KEY);
+            if(stored) messages=JSON.parse(stored);
+            else{
+                messages=[{id:1,author:"妈妈",content:"周末一起去公园野餐吧！记得带上相机拍全家福哦~",time:"2026-05-15 10:30:00",replies:[{author:"爸爸",content:"好主意！我来准备烧烤架。",time:"2026-05-15 11:20:00"},{author:"王宝雯",content:"我要带羽毛球拍！",time:"2026-05-15 12:05:00"}]},{id:2,author:"王宝辉",content:"期末考试我得了第一名，谢谢爸爸辅导我功课！",time:"2026-05-14 20:15:00",replies:[]}];
+                saveData();
+            }
+        }
+        function getNextId(){ return messages.length? Math.max(...messages.map(m=>m.id))+1 : 1; }
+        function deleteMessage(id){ if(confirm("删除留言及回复？")){ messages=messages.filter(m=>m.id!==id); saveData(); renderMessages(); } }
+        function deleteReply(msgId,idx){ if(confirm("删除回复？")){ let msg=messages.find(m=>m.id===msgId); if(msg && msg.replies){ msg.replies.splice(idx,1); saveData(); renderMessages(); } } }
+        function publishNewMessage(){
+            let author=document.getElementById('newMsgAuthor').value, content=document.getElementById('newMsgContent').value.trim();
+            if(!content){ alert("留言内容不能为空"); return; }
+            messages.push({id:getNextId(),author,content,time:getCurrentTime(),replies:[]});
+            saveData(); renderMessages(); document.getElementById('newMsgContent').value='';
+        }
+        function handleReplySubmit(msgId,selectEl,inputEl){
+            let author=selectEl.value, content=inputEl.value.trim();
+            if(!content){ alert("回复内容不能为空"); return; }
+            let msg=messages.find(m=>m.id===msgId);
+            if(msg){ if(!msg.replies) msg.replies=[]; msg.replies.push({author,content,time:getCurrentTime()}); saveData(); renderMessages(); }
+        }
+        function openEmojiPicker(inputElement, isForNewMsg = false) {
+            if (isForNewMsg) {
+                activeNewMsgInput = inputElement;
+                activeReplyInput = null;
+            } else {
+                activeReplyInput = inputElement;
+                activeNewMsgInput = null;
+            }
+            const modal = document.getElementById('emojiModal');
+            modal.style.display = 'block';
+            const grid = document.getElementById('emojiGrid');
+            if (grid.children.length === 0) loadEmojiGrid();
+        }
+        function loadEmojiGrid(){
+            let grid=document.getElementById('emojiGrid'); grid.innerHTML='';
+            LOCAL_EMOJIS.forEach(f=>{
+                let img=document.createElement('img');
+                img.src=`emojis/${f}`; img.alt=f; img.title=f;
+                img.addEventListener('click',()=>{
+                    if (activeReplyInput) {
+                        activeReplyInput.value += `[emoji:${f}]`;
+                        activeReplyInput.focus();
+                    } else if (activeNewMsgInput) {
+                        activeNewMsgInput.value += `[emoji:${f}]`;
+                        activeNewMsgInput.focus();
+                    }
+                });
+                grid.appendChild(img);
+            });
+        }
+        function renderMessages(){
+            let container=document.getElementById('messageList'); if(!container) return;
+            if(messages.length===0){ container.innerHTML='<div style="padding:20px;text-align:center;color:#999;">暂无留言，写下第一句温暖的话吧~</div>'; return; }
+            let html='';
+            for(let i=messages.length-1;i>=0;i--){
+                let msg=messages[i];
+                html+=`<div class="message-item" data-msg-id="${msg.id}"><div><span class="message-author">${escapeHtml(msg.author)}</span><span class="message-time">${escapeHtml(msg.time)}</span><button class="delete-btn" data-action="deleteMsg" data-msg-id="${msg.id}">🗑️ 删除留言</button><p>${formatMessageContent(msg.content)}</p></div><div class="reply-section"><div class="replies-list">`;
+                if(msg.replies && msg.replies.length){
+                    msg.replies.forEach((rep,idx)=>{
+                        html+=`<div class="reply-item"><span class="message-author">${escapeHtml(rep.author)}</span><span class="message-time">${escapeHtml(rep.time)}</span><button class="delete-btn" data-action="deleteReply" data-msg-id="${msg.id}" data-reply-idx="${idx}">🗑️</button><p>${formatMessageContent(rep.content)}</p></div>`;
+                    });
+                }
+                html+=`</div><div class="reply-form"><select class="reply-author-select">${MEMBERS.map(m=>`<option value="${m}">${m}</option>`).join('')}</select><input type="text" class="reply-content-input" placeholder="写回复..." style="flex:2;"><div class="emoji-bar">${['👍','❤️','🌹','🙏','😂','🎉','💪','🤝'].map(e=>`<button type="button" class="emoji-btn" data-emoji="${e}">${e}</button>`).join('')}<button type="button" class="local-emoji-btn" title="更多表情">📁</button></div><button class="submit-reply-btn">回复</button></div></div></div>`;
+            }
+            container.innerHTML=html;
+            document.querySelectorAll('[data-action="deleteMsg"]').forEach(btn=>btn.addEventListener('click',e=>deleteMessage(parseInt(btn.dataset.msgId))));
+            document.querySelectorAll('[data-action="deleteReply"]').forEach(btn=>btn.addEventListener('click',e=>deleteReply(parseInt(btn.dataset.msgId),parseInt(btn.dataset.replyIdx))));
+            document.querySelectorAll('.submit-reply-btn').forEach(btn=>btn.addEventListener('click',e=>{ let div=btn.closest('.message-item'); handleReplySubmit(parseInt(div.dataset.msgId),div.querySelector('.reply-author-select'),div.querySelector('.reply-content-input')); }));
+            document.querySelectorAll('.emoji-btn').forEach(btn=>btn.addEventListener('click',e=>{
+                let input = btn.closest('.reply-form')?.querySelector('.reply-content-input');
+                if(input) { input.value += btn.dataset.emoji; input.focus(); }
+            }));
+            document.querySelectorAll('.local-emoji-btn').forEach(btn=>btn.addEventListener('click',e=>{
+                let input = btn.closest('.reply-form')?.querySelector('.reply-content-input');
+                if(input) openEmojiPicker(input, false);
+            }));
+            document.querySelectorAll('.reply-content-input').forEach(inp=>{ inp.removeEventListener('keypress',replyEnter); inp.addEventListener('keypress',replyEnter); });
+        }
+        function replyEnter(e){ if(e.key==='Enter'){ e.preventDefault(); e.target.closest('.reply-form').querySelector('.submit-reply-btn').click(); } }
+        function initLogin(){
+            let unlock=document.getElementById('unlockBtn'), pwd=document.getElementById('passwordInput'), eye=document.getElementById('toggleEye'), panel=document.getElementById('loginPanel'), guest=document.getElementById('guestbookSection');
+            eye.addEventListener('click',()=>{ let t=pwd.type==='password'?'text':'password'; pwd.type=t; eye.textContent=t==='password'?'👁️':'🙈'; });
+            unlock.addEventListener('click',()=>{
+                if(pwd.value===CORRECT_PASSWORD){
+                    panel.style.display='none'; guest.style.display='block';
+                    loadData(); renderMessages();
+                    document.getElementById('publishNewMsgBtn').onclick=publishNewMessage;
+                    let newInput=document.getElementById('newMsgContent');
+                    newInput.removeEventListener('keypress',newEnter); newInput.addEventListener('keypress',newEnter);
+                    // 绑定新留言区表情按钮（因为它们是静态存在的，直接绑定）
+                    const newMsgEmojiBtns = document.querySelectorAll('#guestbookSection .emoji-btn');
+                    newMsgEmojiBtns.forEach(btn=>{
+                        btn.removeEventListener('click', newMsgEmojiHandler);
+                        btn.addEventListener('click', newMsgEmojiHandler);
+                    });
+                    const newMsgLocalBtn = document.getElementById('newMsgLocalEmojiBtn');
+                    if(newMsgLocalBtn) {
+                        newMsgLocalBtn.removeEventListener('click', newMsgLocalHandler);
+                        newMsgLocalBtn.addEventListener('click', newMsgLocalHandler);
+                    }
+                } else { alert('密码错误'); pwd.value=''; }
+            });
+            pwd.addEventListener('keypress',e=>{ if(e.key==='Enter'){ e.preventDefault(); unlock.click(); } });
+        }
+        function newMsgEmojiHandler(e){
+            let input = document.getElementById('newMsgContent');
+            if(input) { input.value += e.currentTarget.dataset.emoji; input.focus(); }
+        }
+        function newMsgLocalHandler(){
+            let input = document.getElementById('newMsgContent');
+            if(input) openEmojiPicker(input, true);
+        }
+        function newEnter(e){ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('publishNewMsgBtn').click(); } }
+        function initModal(){
+            let modal=document.getElementById('emojiModal'), close=document.querySelector('.close-modal');
+            close.onclick=()=>{ modal.style.display='none'; activeReplyInput=null; activeNewMsgInput=null; };
+            window.onclick=e=>{ if(e.target===modal){ modal.style.display='none'; activeReplyInput=null; activeNewMsgInput=null; } };
+        }
+
+        window.onload = () => {
+            updateDateAndCalendar();
+            setInterval(updateDateAndCalendar, 60000);
+            initLogin();
+            initModal();
+            initHover();
+        };
+    </script>
+</body>
+</html>
